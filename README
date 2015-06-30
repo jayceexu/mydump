@@ -1,0 +1,168 @@
+The specific requirement is on: http://www3.cs.stonybrook.edu/~mikepo/CSE508/hw/hw2.txt
+
+1. Implementation outline:
+
+   I implement this mini-version of tcpdump by using pcap lib.
+   In addition to the functions mentioned in hints, I also used 
+   functions like ...
+
+   pcap_lookupdev: to look up default device
+   pcap_create: to create a pcap handler
+   pcap_set_promisc: set promiscous mode
+   pcap_compile && pcap_setfilter: to compile and set filtering rules
+
+   I learned to use these functions from http://www.tcpdump.org/sniffex.c, 
+   so my pattern of pcap may little bit look like the demo code.
+
+
+   For -g option, I set an extra http filter to find out the packets which 
+   contain GET and POST payload:
+   "tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x504f5354 or "
+   "tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x47455420".
+   In addition to this, I also split the payload in order to find the substring
+   that contains the "GET /"(or "POST /") pattern.
+
+
+2. Example
+
+   Restriction: on mydump.c, I define the maximum number of packets be 1MB.
+
+  2.1 For option -r
+
+~hw2 $ ./mydump -r hw1.pcap 
+[DEBUG] read from pcap file: hw1.pcap
+reading from file hw1.pcap, link-type EN10MB (Ethernet)
+2013-01-12 12:37:42.871346 [DEBUG] Other protocol we do not support yet
+2013-01-12 12:38:02.227995  UDP 192.168.0.1:95 -> 192.168.0.1:24423 len 342
+4E 4F 54 49 46 59 20 2A 20 48 54 54 50 2F 31 2E    NOTIFY * HTTP/1.
+31 0D 0A 48 4F 53 54 3A 20 32 33 39 2E 32 35 35    1..HOST: 239.255
+2E 32 35 35 2E 32 35 30 3A 31 39 30 30 0D 0A 43    .255.250:1900..C
+61 63 68 65 2D 43 6F 6E 74 72 6F 6C 3A 20 6D 61    ache-Control: ma
+78 2D 61 67 65 3D 33 36 30 30 0D 0A 4C 6F 63 61    x-age=3600..Loca
+74 69 6F 6E 3A 20 68 74 74 70 3A 2F 2F 31 39 32    tion: http://192
+2E 31 36 38 2E 30 2E 31 3A 38 30 2F 52 6F 6F 74    .168.0.1:80/Root
+44 65 76 69 63 65 2E 78 6D 6C 0D 0A 4E 54 3A 20    Device.xml..NT: 
+75 75 69 64 3A 75 70 6E 70 2D 49 6E 74 65 72 6E    uuid:upnp-Intern
+65 74 47 61 74 65 77 61 79 44 65 76 69 63 65 2D    etGatewayDevice-
+31 5F 30 2D 63 34 33 64 63 37 31 37 36 66 39 62    1_0-c43dc7176f9b
+0D 0A 55 53 4E 3A 20 75 75 69 64 3A 75 70 6E 70    ..USN: uuid:upnp
+2D 49 6E 74 65 72 6E 65 74 47 61 74 65 77 61 79    -InternetGateway
+44 65 76 69 63 65 2D 31 5F 30 2D 63 34 33 64 63    Device-1_0-c43dc
+37 31 37 36 66 39 62 0D 0A 4E 54 53 3A 20 73 73    7176f9b..NTS: ss
+64 70 3A 61 6C 69 76 65 0D 0A 53 65 72 76 65 72    dp:alive..Server
+3A 20 55 50 6E 50 2F 31 2E 30 20 55 50 6E 50 2F    : UPnP/1.0 UPnP/
+31 2E 30 20 55 50 6E 50 2D 44 65 76 69 63 65 2D    1.0 UPnP-Device-
+48 6F 73 74 2F 31 2E 30 0D 0A 0D 0A                Host/1.0....
+
+2013-01-12 12:38:02.231699  UDP 192.168.0.1:95 -> 192.168.0.1:24423 len 398
+4E 4F 54 49 46 59 20 2A 20 48 54 54 50 2F 31 2E    NOTIFY * HTTP/1.
+31 0D 0A 48 4F 53 54 3A 20 32 33 39 2E 32 35 35    1..HOST: 239.255
+2E 32 35 35 2E 32 35 30 3A 31 39 30 30 0D 0A 43    .255.250:1900..C
+61 63 68 65 2D 43 6F 6E 74 72 6F 6C 3A 20 6D 61    ache-Control: ma
+78 2D 61 67 65 3D 33 36 30 30 0D 0A 4C 6F 63 61    x-age=3600..Loca
+74 69 6F 6E 3A 20 68 74 74 70 3A 2F 2F 31 39 32    tion: http://192
+2E 31 36 38 2E 30 2E 31 3A 38 30 2F 52 6F 6F 74    .168.0.1:80/Root
+44 65 76 69 63 65 2E 78 6D 6C 0D 0A 4E 54 3A 20    Device.xml..NT: 
+75 72 6E 3A 73 63 68 65 6D 61 73 2D 75 70 6E 70    urn:schemas-upnp
+2D 6F 72 67 3A 64 65 76 69 63 65 3A 49 6E 74 65    -org:device:Inte
+72 6E 65 74 47 61 74 65 77 61 79 44 65 76 69 63    rnetGatewayDevic
+65 3A 31 0D 0A 55 53 4E 3A 20 75 75 69 64 3A 75    e:1..USN: uuid:u
+70 6E 70 2D 49 6E 74 65 72 6E 65 74 47 61 74 65    pnp-InternetGate
+77 61 79 44 65 76 69 63 65 2D 31 5F 30 2D 63 34    wayDevice-1_0-c4
+33 64 63 37 31 37 36 66 39 62 3A 3A 75 72 6E 3A    3dc7176f9b::urn:
+73 63 68 65 6D 61 73 2D 75 70 6E 70 2D 6F 72 67    schemas-upnp-org
+3A 64 65 76 69 63 65 3A 49 6E 74 65 72 6E 65 74    :device:Internet
+47 61 74 65 77 61 79 44 65 76 69 63 65 3A 31 0D    GatewayDevice:1.
+0A 4E 54 53 3A 20 73 73 64 70 3A 61 6C 69 76 65    .NTS: ssdp:alive
+0D 0A 53 65 72 76 65 72 3A 20 55 50 6E 50 2F 31    ..Server: UPnP/1
+2E 30 20 55 50 6E 50 2F 31 2E 30 20 55 50 6E 50    .0 UPnP/1.0 UPnP
+2D 44 65 76 69 63 65 2D 48 6F 73 74 2F 31 2E 30    -Device-Host/1.0
+0D 0A 0D 0A                                         ....
+
+
+
+
+  2.2 For option -g:
+~hw2 $ ./mydump -g -r hw1.pcap
+[DEBUG] read from pcap file: hw1.pcap
+reading from file hw1.pcap, link-type EN10MB (Ethernet)
+2013-01-12 23:30:48.908526  TCP 92.240.68.152:9485 -> 92.240.68.152:80 len 177
+GET http://pic.leech.it/i/f166c/479246b0asttas.jpg
+
+2013-01-12 23:30:49.032953  TCP 192.168.0.200:40341 -> 192.168.0.200:80 len 229
+GET /i/f166c/479246b0asttas.jpg
+
+2013-01-12 23:31:19.154432  TCP 92.240.68.152:17260 -> 92.240.68.152:80 len 207
+GET http://ecx.images-amazon.com/images/I/41oZ1XsiOAL._SL500_AA300_.jpg
+
+2013-01-12 23:31:19.244125  TCP 192.168.0.200:40630 -> 192.168.0.200:80 len 233
+GET /images/I/41oZ1XsiOAL.
+   
+
+   2.3 for option [expression]:
+~hw2 $ ./mydump -r hw1.pcap tcp
+[DEBUG] read from pcap file: hw1.pcap
+[DEBUG] Filter expression: tcp
+reading from file hw1.pcap, link-type EN10MB (Ethernet)
+2013-01-12 15:35:49.329823  TCP 122.154.101.54:39437 -> 122.154.101.54:443 len 74
+2013-01-12 15:35:49.350673  TCP 192.168.0.200:443 -> 192.168.0.200:39437 len 74
+2013-01-12 15:35:49.679245  TCP 122.154.101.54:39437 -> 122.154.101.54:443 len 66
+2013-01-12 15:35:49.724737  TCP 122.154.101.54:39437 -> 122.154.101.54:443 len 171
+80 67 01 03 01 00 4E 00 00 00 10 00 00 39 00 00    .g....N......9..
+38 00 00 35 00 00 16 00 00 13 00 00 0A 07 00 C0    8..5............
+00 00 33 00 00 32 00 00 2F 03 00 80 00 00 05 00    ..3..2../.......
+00 04 01 00 80 00 00 15 00 00 12 00 00 09 06 00    ................
+40 00 00 14 00 00 11 00 00 08 00 00 06 04 00 80    @...............
+00 00 03 02 00 80 00 00 FF 0D 21 3B D5 B5 7B 08    ..........!;..{.
+01 50 0D C5 A5 C2 C1 AF 38                         .P......8
+
+2013-01-12 15:35:49.724815  TCP 192.168.0.200:443 -> 192.168.0.200:39437 len 66
+
+
+   2.4 for option -s:
+~hw2 $ ./mydump -s WFAWLANConfig -r hw1.pcap udp
+[DEBUG] The search string is "WFAWLANConfig"
+[DEBUG] read from pcap file: hw1.pcap
+[DEBUG] Filter expression: udp
+reading from file hw1.pcap, link-type EN10MB (Ethernet)
+2013-01-12 12:38:16.879530  UDP 192.168.0.1:95 -> 192.168.0.1:24423 len 405
+4E 4F 54 49 46 59 20 2A 20 48 54 54 50 2F 31 2E    NOTIFY * HTTP/1.
+31 0D 0A 48 6F 73 74 3A 20 32 33 39 2E 32 35 35    1..Host: 239.255
+2E 32 35 35 2E 32 35 30 3A 31 39 30 30 0D 0A 43    .255.250:1900..C
+61 63 68 65 2D 43 6F 6E 74 72 6F 6C 3A 20 6D 61    ache-Control: ma
+78 2D 61 67 65 3D 36 30 0D 0A 4C 6F 63 61 74 69    x-age=60..Locati
+6F 6E 3A 20 68 74 74 70 3A 2F 2F 31 39 32 2E 31    on: http://192.1
+36 38 2E 30 2E 31 3A 31 39 30 30 2F 57 46 41 44    68.0.1:1900/WFAD
+65 76 69 63 65 2E 78 6D 6C 0D 0A 4E 54 53 3A 20    evice.xml..NTS: 
+73 73 64 70 3A 61 6C 69 76 65 0D 0A 53 65 72 76    ssdp:alive..Serv
+65 72 3A 20 50 4F 53 49 58 2C 20 55 50 6E 50 2F    er: POSIX, UPnP/
+31 2E 30 20 42 72 6F 61 64 63 6F 6D 20 55 50 6E    1.0 Broadcom UPn
+50 20 53 74 61 63 6B 2F 65 73 74 69 6D 61 74 69    P Stack/estimati
+6F 6E 20 31 2E 30 30 0D 0A 4E 54 3A 20 75 72 6E    on 1.00..NT: urn
+3A 73 63 68 65 6D 61 73 2D 77 69 66 69 61 6C 6C    :schemas-wifiall
+69 61 6E 63 65 2D 6F 72 67 3A 73 65 72 76 69 63    iance-org:servic
+65 3A 57 46 41 57 4C 41 4E 43 6F 6E 66 69 67 3A    e:WFAWLANConfig:
+31 0D 0A 55 53 4E 3A 20 75 75 69 64 3A 46 35 31    1..USN: uuid:F51
+39 33 39 30 41 2D 34 34 44 44 2D 32 39 35 38 2D    9390A-44DD-2958-
+36 32 33 37 2D 45 41 33 37 42 39 38 37 43 33 46    6237-EA37B987C3F
+44 3A 3A 75 72 6E 3A 73 63 68 65 6D 61 73 2D 77    D::urn:schemas-w
+69 66 69 61 6C 6C 69 61 6E 63 65 2D 6F 72 67 3A    ifialliance-org:
+73 65 72 76 69 63 65 3A 57 46 41 57 4C 41 4E 43    service:WFAWLANC
+6F 6E 66 69 67 3A 31 0D 0A 0D 0A                   onfig:1....
+      
+
+  2.5 for option -i
+  jian@jian-VirtualBox:~/hw2$ sudo ./mydump -i eth0
+[DEBUG] read from device: eth0
+[DEBUG] listening device: eth0
+2015-03-09 23:44:33.175494  UDP 10.0.2.15:51968 -> 10.0.2.15:0 len 76
+47 5B 01 00 00 01 00 00 00 00 00 00 03 77 77 77    G[...........www
+08 66 61 63 65 62 6F 6F 6B 03 63 6F 6D 00 00 1C    .facebook.com...
+00 01                                               ..
+
+2015-03-09 23:44:33.175588  UDP 10.0.2.15:51968 -> 10.0.2.15:0 len 76
+47 5B 01 00 00 01 00 00 00 00 00 00 03 77 77 77    G[...........www
+08 66 61 63 65 62 6F 6F 6B 03 63 6F 6D 00 00 1C    .facebook.com...
+00 01                                               ..
+
+
